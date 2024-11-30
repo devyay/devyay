@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      background: url('fundo.png') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      position: relative;
+      overflow: hidden;
+    }
+
+    p {
+      font-size: 2em;
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 60px;
+      color: white;
+      word-wrap: break-word;
+      z-index: 2;
+    }
+    
+    .buttons {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      z-index: 2;
+    }
+
+    .buttons button {
+      font-size: 1.5em;
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      background-color: rgba(0, 204, 153, 0.9);
+      color: white;
+      cursor: pointer;
+      transition: transform 0.3s ease, background-color 0.3s ease, left 0.5s ease, top 0.5s ease;
+    }
+
+    .buttons button.sim {
+      position: absolute;
+      background-color: rgba(0, 204, 153, 0.9);
+    }
+
+    .buttons button.nao {
+      position: absolute;
+      background-color: rgba(255, 102, 102, 0.9);
+    }
+
+    .buttons button:hover {
+      transform: scale(1.1);
+    }
+
+    .buttons button.nao:hover {
+      background-color: rgba(204, 51, 51, 1);
+    }
+
+    #blurCanvas1, #blurCanvas2 {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+  </style>
+</head>
+<body>
+    <p id="pergunta">Namora comigo princesa?</p>
+
+  <div class="buttons">
+    <button class="sim" id="btnSim" onmouseover="moverBotao()" onclick="redirecionar()">Sim</button>
+    <button class="nao" id="btnNao" onclick="responder('Não')">Não</button>
+  </div>
+
+  <canvas id="blurCanvas1"></canvas>
+  <canvas id="blurCanvas2"></canvas>
+
+  <script>
+    function responder(resposta) {
+      alert('Isso nunca foi uma opção :D');
+      const naoButton = document.getElementById('btnNao');
+      naoButton.style.display = 'none'; // Faz o botão desaparecer
+    }
+
+    const blurCanvas1 = document.getElementById('blurCanvas1');
+    const blurCanvas2 = document.getElementById('blurCanvas2');
+    const blurCtx1 = blurCanvas1.getContext('2d');
+    const blurCtx2 = blurCanvas2.getContext('2d');
+
+    blurCanvas1.width = window.innerWidth;
+    blurCanvas1.height = window.innerHeight;
+    blurCanvas2.width = window.innerWidth;
+    blurCanvas2.height = window.innerHeight;
+
+    const simButton = document.getElementById('btnSim');
+    const naoButton = document.getElementById('btnNao');
+
+    function positionButtons() {
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+
+      simButton.style.left = `${windowWidth / 2 - simButton.offsetWidth - 50}px`;
+      simButton.style.top = `${windowHeight / 2 + 40}px`;
+
+      naoButton.style.left = `${windowWidth / 2 + 50}px`;
+      naoButton.style.top = `${windowHeight / 2 + 40}px`;
+    }
+
+    function drawBlurLayer(ctx) {
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
+
+    function generateRandomPoints() {
+      return [
+        { x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight, speedX: (Math.random() - 0.5) * 2, speedY: (Math.random() - 0.5) * 2 },
+        { x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight, speedX: (Math.random() - 0.5) * 2, speedY: (Math.random() - 0.5) * 2 },
+        { x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight, speedX: (Math.random() - 0.5) * 2, speedY: (Math.random() - 0.5) * 2 }
+      ];
+    }
+
+    function movePoints(points) {
+      points.forEach(point => {
+        point.x += point.speedX;
+        point.y += point.speedY;
+
+        if (point.x < 0 || point.x > window.innerWidth) {
+          point.speedX *= -1;
+        }
+        if (point.y < 0 || point.y > window.innerHeight) {
+          point.speedY *= -1;
+        }
+      });
+    }
+
+    function removeOpaqueLayer(ctx, points) {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      ctx.lineTo(points[1].x, points[1].y);
+      ctx.lineTo(points[2].x, points[2].y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    function drawLayerWithPoints(ctx, points) {
+      drawBlurLayer(ctx);
+      removeOpaqueLayer(ctx, points);
+    }
+
+    let points1 = generateRandomPoints();
+    let points2 = generateRandomPoints();
+
+    function animate() {
+      movePoints(points1);
+      movePoints(points2);
+
+      drawLayerWithPoints(blurCtx1, points1);
+      drawLayerWithPoints(blurCtx2, points2);
+
+      requestAnimationFrame(animate);
+    }
+
+    drawLayerWithPoints(blurCtx1, points1);
+    drawLayerWithPoints(blurCtx2, points2);
+    animate();
+
+    window.addEventListener('resize', () => {
+      blurCanvas1.width = window.innerWidth;
+      blurCanvas1.height = window.innerHeight;
+      blurCanvas2.width = window.innerWidth;
+      blurCanvas2.height = window.innerHeight;
+      positionButtons();
+      drawLayerWithPoints(blurCtx1, points1);
+      drawLayerWithPoints(blurCtx2, points2);
+    });
+
+    let moveCounter = 0; // Contador de movimentos
+    const maxMoves = 99999; // Limite de movimentos
+
+    function moverBotao() {
+      if (moveCounter >= maxMoves) {
+        simButton.style.pointerEvents = 'auto'; // Permitir clique no botão
+        return; // Não move mais o botão
+      }
+
+      const maxX = window.innerWidth - simButton.offsetWidth - 20;
+      const maxY = window.innerHeight - simButton.offsetHeight - 20;
+
+      const randomX = Math.random() * maxX;
+      const randomY = Math.random() * maxY;
+
+      simButton.style.left = `${randomX}px`;
+      simButton.style.top = `${randomY}px`;
+
+      moveCounter++; // Incrementa o contador
+    }
+
+    function redirecionar() {
+      window.location.href = "https://www.example.com"; // Substitua pelo URL desejado
+    }
+
+    positionButtons();
+  </script>
+</body>
+</html>
